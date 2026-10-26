@@ -192,22 +192,39 @@ def save_tags(uri, values, overwrite=False):
     return updated_uri
 
 
-# --- EN: Fetches embedded artwork using mpc and stores it in a per-plugin cache.
-# --- ES: Obtiene carátula incrustada con mpc y la guarda en una caché del plugin.
+# --- EN: Checks whether a file starts with a supported image format signature.
+# --- ES: Comprueba si un archivo empieza con la firma de un formato de imagen compatible.
+def has_image_signature(path):
+    try:
+        with open(path, "rb") as image_file:
+            header = image_file.read(16)
+    except OSError:
+        return False
+    return (
+        header.startswith(b"\x89PNG\r\n\x1a\n")
+        or header.startswith((b"\xff\xd8\xff", b"GIF87a", b"GIF89a", b"BM", b"II*\x00", b"MM\x00*"))
+        or (header.startswith(b"RIFF") and header[8:12] == b"WEBP")
+        or (header[4:8] == b"ftyp" and header[8:12] in {b"avif", b"avis"})
+    )
+
+
+# --- EN: Fetches embedded artwork using mpc and stores valid images in a per-plugin cache.
+# --- ES: Obtiene carátula incrustada con mpc y guarda imágenes válidas en la caché del plugin.
 def fetch_cover(uri, cache_directory):
     cache = Path(cache_directory)
     cache.mkdir(parents=True, exist_ok=True)
     destination = cache / (hashlib.sha256(uri.encode("utf-8")).hexdigest() + ".cover")
-    if not destination.is_file() or destination.stat().st_size == 0:
+    if not has_image_signature(destination):
+        destination.unlink(missing_ok=True)
         descriptor, temporary_name = tempfile.mkstemp(prefix=".cover-", dir=cache)
         try:
             with os.fdopen(descriptor, "wb") as output:
                 result = subprocess.run(["mpc", "readpicture", uri], stdout=output, stderr=subprocess.PIPE)
-                if result.returncode != 0 or os.path.getsize(temporary_name) == 0:
+                if result.returncode != 0 or not has_image_signature(temporary_name):
                     output.seek(0)
                     output.truncate()
                     result = subprocess.run(["mpc", "albumart", uri], stdout=output, stderr=subprocess.PIPE)
-            if result.returncode != 0 or os.path.getsize(temporary_name) == 0:
+            if result.returncode != 0 or not has_image_signature(temporary_name):
                 os.unlink(temporary_name)
                 print("")
                 return
@@ -275,6 +292,20 @@ def list_library_page(page, page_size):
     }
 
 
+# --- EN: Waits for MPD to rescan its library before returning the requested page.
+# --- ES: Espera a que MPD reescanee la biblioteca antes de devolver la página solicitada.
+def refresh_library_page(page, page_size):
+    result = subprocess.run(
+        ["mpc", "--wait", "update"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "No se pudo actualizar la biblioteca de MPD")
+    return list_library_page(page, page_size)
+
+
 # --- EN: Dispatches the requested helper operation using argv parameters; prints data or raises on failure.
 # --- ES: Ejecuta la operación solicitada con parámetros argv; imprime datos o lanza un error.
 def main():
@@ -291,6 +322,8 @@ def main():
         trash_track(sys.argv[2])
     elif action == "library-page":
         print(json.dumps(list_library_page(sys.argv[2], sys.argv[3]), ensure_ascii=False))
+    elif action == "library-refresh":
+        print(json.dumps(refresh_library_page(sys.argv[2], sys.argv[3]), ensure_ascii=False))
     else:
         raise RuntimeError("Acción de archivo desconocida")
 

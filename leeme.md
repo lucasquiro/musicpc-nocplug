@@ -3,7 +3,7 @@
 EN: User guide, installation instructions, state contract, and project map for MusicPC.
 ES: Guía de uso, instalación, contrato de estado y mapa del proyecto MusicPC.
 
-MusicPC es un plugin de Noctalia para controlar un servidor MPD mediante `mpc`. Incluye un reproductor compacto en la barra, un panel de cola con vistas de playlists y biblioteca, y un editor independiente de etiquetas MP3. No reproduce audio por sí mismo.
+MusicPC es un plugin de Noctalia para controlar un servidor MPD mediante `mpc`. Incluye un reproductor compacto en la barra y un panel con vistas de cola, playlists, biblioteca y edición de metadatos MP3. No reproduce audio por sí mismo.
 
 ## Requisitos
 
@@ -16,7 +16,7 @@ MusicPC es un plugin de Noctalia para controlar un servidor MPD mediante `mpc`. 
 
 Instala el directorio del plugin mediante el flujo de plugins locales de Noctalia o una fuente compatible y activa `lucasquiro/musicpc-nocplug`. Añade el widget `lucasquiro/musicpc-nocplug:player` a una barra. La conexión a MPD y la biblioteca musical se configuran fuera del plugin, en MPD y `mpc`.
 
-El título del widget abre el panel. Sus pestañas son Cola, Playlists y Biblioteca. La cola permite reproducir, buscar una posición, reordenar pistas, gestionar playlists y quitar canciones. La biblioteca está paginada y permite añadir pistas a la cola. Al hacer clic derecho en una pista se puede editar sus metadatos MP3 o moverla a la papelera del escritorio. La edición de metadatos solo admite archivos MP3.
+El título del widget abre el panel. Sus pestañas son Cola, Playlists y Biblioteca. La cola permite reproducir, buscar una posición, reordenar pistas, gestionar playlists y quitar canciones. La biblioteca está paginada y permite añadir pistas a la cola. Usa el botón de recarga de Biblioteca después de cambiar archivos en el disco; espera a que MPD actualice su índice. Al hacer clic derecho en una pista se puede editar sus metadatos MP3 o moverla a la papelera del escritorio. El editor usa la misma superficie del panel y al cerrarse o guardar restaura la vista anterior. La edición solo admite archivos MP3.
 
 ## Ajustes
 
@@ -34,7 +34,7 @@ El panel dibuja como máximo 40 filas de cola, 30 nombres de playlist y 25 canci
 
 ## Cómo se comunican las partes
 
-Noctalia ejecuta `service.luau`, `widget.luau`, `panel.luau` y `editor.luau` en máquinas virtuales Luau separadas. No comparten variables locales ni cachés de módulos. Las entradas intercambian datos simples mediante `noctalia.state`; un módulo importado por dos entradas se carga una vez en la VM de cada una.
+Noctalia ejecuta `service.luau`, `widget.luau` y `panel.luau` en máquinas virtuales Luau separadas. No comparten variables locales ni cachés de módulos. Las entradas intercambian datos simples mediante `noctalia.state`. El panel de cola carga el controlador del editor y dibuja ambas vistas en la misma superficie, evitando abrir un segundo panel al editar metadatos.
 
 El servicio publica la tabla `player`:
 
@@ -54,6 +54,7 @@ Las claves relacionadas son `player.progress` (`elapsed`, `total`, `percent`), `
 ```text
 musicpc-nocplug/
 ├── plugin.toml                 # Identidad, nivel API, dependencias y entradas de Noctalia.
+├── thumbnail.webp              # Imagen WebP de 960x540 para la tienda.
 ├── LICENSE                     # Licencia MIT.
 ├── CHANGELOG.md                # Historial de versiones.
 ├── README.md                   # Guía en inglés y mapa del proyecto.
@@ -61,21 +62,18 @@ musicpc-nocplug/
 ├── service.luau                # Entrada del servicio; carga el sondeador MPD.
 ├── widget.luau                 # Entrada del widget de controles de barra.
 ├── panel.luau                  # Entrada del panel con callbacks globales del host.
-├── editor.luau                 # Entrada del editor que expone callbacks de Noctalia.
 ├── noctalia.d.luau             # Definiciones para Luau LSP; marca APIs posteriores al nivel 34.
 ├── translations/               # Textos en inglés y español para controles y mensajes del plugin.
 │   ├── en.json                 # Traducciones en inglés.
 │   └── es.json                 # Traducciones en español.
 ├── assets/                     # Recursos de imagen usados durante la ejecución.
 │   ├── frames/                 # Fotogramas que carga panel.luau.
-│   │   ├── music/              # Fotogramas de animación musical.
-│   │   ├── sleep/              # Fotogramas de reposo.
-│   │   ├── sleep_back/         # Transición hacia reposo.
-│   │   └── wake/               # Transición de despertar.
+│   │   ├── sleep_back/         # Transición hacia la pose de reposo.
+│   │   └── wake/               # Transición hacia la pose activa.
 │   └── source/                 # GIF originales locales, excluidos por Git.
 │       └── .gitignore          # Excluye los GIF fuente de Git.
 ├── lib/                        # Módulos reutilizables, cacheados por VM de entrada.
-│   ├── editor/controller.luau  # Estado, UI y flujo de guardado/cierre del editor.
+│   ├── editor/controller.luau  # Estado, UI y flujo de guardado/cierre del editor integrado.
 │   ├── media/media_files.py    # Validación de rutas, carátulas, etiquetas y papelera.
 │   ├── metadata/editor_ops.luau # Adaptador argv asíncrono al helper Python.
 │   ├── mpd/client.luau         # Cliente mínimo de comandos mpc con argv.
@@ -86,6 +84,7 @@ musicpc-nocplug/
 └── docs/                       # Notas de mantenimiento y referencia local de mpc.
     ├── .gitignore              # Excluye archivos de trabajo temporales.
     ├── architecture.md         # Runtime, estado, APIs y límites de render.
+    ├── publishing.md           # Lista de comprobación para publicar en Noctalia.
     ├── mpc-commands.md         # Referencia en inglés para mpc 0.35.
     └── removed-functions.md    # Evidencia de funciones retiradas y búsqueda de accesos dinámicos.
 ```
@@ -102,6 +101,6 @@ noctalia msg plugins enable lucasquiro/musicpc-nocplug
 noctalia msg panel-toggle lucasquiro/musicpc-nocplug:queue
 ```
 
-Para probar el editor de metadatos, activa el plugin, abre el panel, entra a Biblioteca, haz clic derecho en una pista MP3 y elige Editar metadatos. Cambia una etiqueta o el nombre de archivo, guarda y comprueba que se vuelva a la cola y se actualice la biblioteca. Para probar la confirmación de reemplazo, escribe como nombre un basename MP3 existente; cancela primero si no deseas reemplazarlo.
+Para probar el editor de metadatos, activa el plugin, abre el panel, entra a Biblioteca, haz clic derecho en una pista MP3 y elige Editar metadatos. Comprueba que el editor conserve la misma superficie del panel. Cambia una etiqueta o el nombre de archivo, guarda y comprueba que vuelva a la vista anterior y se actualice la biblioteca. Para probar la confirmación de reemplazo, escribe como nombre un basename MP3 existente; cancela primero si no deseas reemplazarlo.
 
-Para publicar falta todavía `thumbnail.webp` y la URL del repositorio. El catálogo de una fuente Git independiente es un `catalog.toml` en la raíz de ese repositorio; una contribución a `community-plugins` sigue las instrucciones de ese repositorio y automatiza su catálogo.
+La miniatura para la tienda de Noctalia es `thumbnail.webp` en la raíz del plugin. El repositorio está en [github.com/lucasquiro/musicpc-nocplug](https://github.com/lucasquiro/musicpc-nocplug). Para proponerlo en `noctalia-dev/community-plugins`, coloca los archivos del plugin en el directorio de primer nivel `musicpc-nocplug/`; ese repositorio genera su `catalog.toml` mediante CI, así que no debe añadirse a este repositorio individual.

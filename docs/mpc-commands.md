@@ -29,7 +29,7 @@ This local reference describes the `mpc` 0.35 command-line client. MusicPC invok
 | `mpc idleloop EVENTS...` | Wait continuously for player, playlist, stored-playlist, or option changes. |
 | `mpc readpicture URI` / `mpc albumart URI` | Return embedded artwork when MPD provides it. |
 | `mpc listall` | Stream library paths for paged browsing. |
-| `mpc update` | Ask MPD to rescan library metadata after file edits. |
+| `mpc --wait update` | Ask MPD to rescan library metadata and wait for completion before refreshing the library view. |
 
 ## Other mpc 0.35 commands
 

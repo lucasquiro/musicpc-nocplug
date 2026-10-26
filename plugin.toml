@@ -2,12 +2,12 @@
 ## ES: Declara los metadatos de catálogo, dependencias y scripts de entrada de Noctalia para MusicPC.
 id         = "lucasquiro/musicpc-nocplug"
 name       = "MusicPC"
-version    = "0.2.1"
+version    = "0.2.3"
 plugin_api = 34
 author     = "lucasquiro"
 license    = "MIT"
 description = "Control an MPD player from the bar with queue, playlists, library browsing, and MP3 metadata editing."
-tags       = ["music", "mpd", "player"]
+tags       = ["music", "media", "audio", "bar", "panel", "service"]
 dependencies = ["mpc", "python3", "ffmpeg", "gio"]
 icon       = "music"
 
@@ -26,12 +26,3 @@ width     = 400
 height    = 480
 placement = "attached"
 open_near_click = true
-
-[[panel]]
-id        = "editor"
-entry     = "editor.luau"
-width     = 400
-height    = 480
-placement = "attached"
-open_near_click = true
-dismiss_on_outside_click = false

@@ -100,3 +100,39 @@ end
 function onLibraryContextAction(actionId, file)
   panelController.dispatch("onLibraryContextAction", actionId, file)
 end
+
+--- EN: Requests editor closure through its unsaved-changes guard; returns nothing.
+--- ES: Solicita cerrar el editor mediante su comprobación de cambios pendientes; no devuelve nada.
+function requestClose()
+  panelController.dispatch("requestClose")
+end
+
+--- EN: Continues editing after dismissing the unsaved-changes prompt; returns nothing.
+--- ES: Continúa la edición después de cerrar el aviso de cambios pendientes; no devuelve nada.
+function continueEditing()
+  panelController.dispatch("continueEditing")
+end
+
+--- EN: Discards editor changes and returns to the queue panel; returns nothing.
+--- ES: Descarta los cambios del editor y vuelve al panel de cola; no devuelve nada.
+function discardChanges()
+  panelController.dispatch("discardChanges")
+end
+
+--- EN: Saves edited metadata, optionally allowing replacement; returns nothing.
+--- ES: Guarda los metadatos editados, permitiendo opcionalmente reemplazar; no devuelve nada.
+function saveMetadata(overwrite)
+  panelController.dispatch("saveMetadata", overwrite)
+end
+
+--- EN: Cancels the pending overwrite confirmation; returns nothing.
+--- ES: Cancela la confirmación de reemplazo pendiente; no devuelve nada.
+function cancelOverwrite()
+  panelController.dispatch("cancelOverwrite")
+end
+
+--- EN: Confirms overwrite and retries saving the metadata; returns nothing.
+--- ES: Confirma el reemplazo y reintenta guardar los metadatos; no devuelve nada.
+function confirmOverwriteSave()
+  panelController.dispatch("confirmOverwriteSave")
+end

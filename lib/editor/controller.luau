@@ -1,7 +1,7 @@
 --!nonstrict
 
---- EN: Coordinates editor state, UI rendering, and metadata operations; required by editor.luau.
---- ES: Coordina el estado del editor, el dibujo de la interfaz y las operaciones de metadatos; lo usa editor.luau.
+--- EN: Coordinates editor state, UI rendering, and metadata operations; required by the queue-panel controller.
+--- ES: Coordina el estado, la interfaz y las operaciones de metadatos; lo usa el controlador del panel de cola.
 
 local M = {}
 
@@ -14,6 +14,7 @@ local file = ""
 local filename = ""
 local originalFilename = ""
 local metadataLoaded = false
+local closeHandler = nil
 local tags = {}
 local original = {}
 local fields = {
@@ -116,13 +117,28 @@ local function render()
   }))
 end
 
+--- EN: Renders the editor in its owning panel surface; returns nothing.
+--- ES: Dibuja el editor en la superficie de panel que lo aloja; no devuelve nada.
+function M.renderCurrent()
+  render()
+end
+
 --- EN: Clears the selected track and returns to the queue panel; returns nothing.
 --- ES: Limpia la pista seleccionada y vuelve al panel de cola; no devuelve nada.
 local function closeEditor()
   opened = false
   noctalia.state.set("musicpc.editTrack", nil)
-  panel.close()
-  noctalia.togglePanel("lucasquiro/musicpc-nocplug:queue")
+  if closeHandler then
+    closeHandler()
+  else
+    panel.close()
+  end
+end
+
+--- EN: Sets the host callback used to return from the embedded editor; returns nothing.
+--- ES: Define el callback del host para volver desde el editor integrado; no devuelve nada.
+function M.setCloseHandler(handler)
+  closeHandler = handler
 end
 
 --- EN: Loads the selected track's tags when Noctalia opens this panel; returns nothing.

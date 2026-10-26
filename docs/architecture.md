@@ -3,11 +3,11 @@
 EN: Maintainer architecture reference for the MusicPC entries and modules.
 ES: Referencia de arquitectura para mantenimiento de las entradas y módulos de MusicPC.
 
-This document describes the `0.2.0` code layout and the compatibility boundary. The manifest keeps the canonical ID `lucasquiro/musicpc-nocplug` and `plugin_api = 34`, matching the supported Noctalia v5.3.0 baseline.
+This document describes the code layout and compatibility boundary. The manifest keeps the canonical ID `lucasquiro/musicpc-nocplug` and `plugin_api = 34`, matching the supported Noctalia v5.3.0 baseline.
 
 ## Runtime boundaries
 
-Noctalia starts `service.luau`, `widget.luau`, `panel.luau`, and `editor.luau` in separate Luau VMs. They cannot share local variables or module instances. A `require` cache belongs to one entry VM, so a module imported by both the widget and panel executes once in each VM. Entries communicate through plain values in `noctalia.state`.
+Noctalia starts `service.luau`, `widget.luau`, and `panel.luau` in separate Luau VMs. They cannot share local variables or module instances. A `require` cache belongs to one entry VM, so a module imported by both the widget and panel executes once in each VM. Entries communicate through plain values in `noctalia.state`. The queue panel embeds the metadata editor by requiring its controller and rendering into the same panel surface; the editor is not registered as a separate panel entry. Since named UI callbacks resolve against the entry script, `panel.luau` must forward the editor's named actions to the panel controller while the editor view is active.
 
 The root entry scripts remain at the plugin root. Each manifest `entry` points to one of those `.luau` files. Module imports are relative paths beginning with `./` or `../` and ending in `.luau`. Editor operations are lazy: the editor controller loads the metadata adapter only when it opens the selected track; playlist operations are loaded by the queue panel when needed.
 
@@ -32,7 +32,7 @@ The player `state` is normally `playing`, `paused`, `stopped`, or `offline`. `po
 
 ## Process execution
 
-The service and UI use `noctalia.runAsync` with argument arrays. MPD commands never interpolate track names, playlist names, or file paths into a shell string. The panel invokes the Python helper as an argv list equivalent to:
+The service and UI use `noctalia.runAsync` with argument arrays. MPD commands never interpolate track names, playlist names, or file paths into a shell string. The Library refresh action runs `mpc --wait update` before requesting `mpc listall`, so moved or deleted files leave the visible index only after MPD finishes its scan. The panel invokes the Python helper as an argv list equivalent to:
 
 ```lua
 { "python3", pluginDir .. "/lib/media/media_files.py", action, ... }
@@ -44,7 +44,7 @@ The helper validates library-relative paths before reading/writing tags or movin
 
 The panel renders at most 40 queue rows, 30 playlist names, and 25 library tracks per page. It centers a queue window around the current track for long queues. The Python helper scans only far enough to produce the requested library page and discover nearby pagination. These bounds limit UI tree construction; they do not change MPD data.
 
-The panel uses a fixed `400 x 480` manifest surface and keeps its list viewport bounded. Do not use `height = "content"` or `max_height`: both require plugin API 42. Image paths such as `assets/frames/music/f_000.png` resolve from the plugin root.
+The panel uses a fixed `400 x 480` manifest surface and keeps its list viewport bounded. Do not use `height = "content"` or `max_height`: both require plugin API 42. Mascot transitions use `assets/frames/wake/` when playback starts and `assets/frames/sleep_back/` when it stops; each transition holds on its final frame until playback changes again. Image paths resolve from the plugin root.
 
 ## API compatibility
 
@@ -54,4 +54,4 @@ The manifest remains at API 34. The plugin's core used APIs are cumulative level
 
 ## Publishing status
 
-The package has a manifest, English and Spanish guides, translations, an MIT license, and version `0.2.0`. A `thumbnail.webp` and the Git repository URL are still pending. A standalone Git source repository needs its documented root `catalog.toml`; a contribution to `noctalia-dev/community-plugins` instead follows that repository's submission rules and catalog automation. The original GIF files live in `assets/source/` and are ignored; the PNG animation frames are runtime assets and must stay in the package.
+The plugin root contains `plugin.toml`, `README.md`, and `thumbnail.webp`; the repository URL is `https://github.com/lucasquiro/musicpc-nocplug`. A community-plugin submission places this package in a top-level directory matching the ID suffix (`musicpc-nocplug`); that repository generates its root `catalog.toml` with CI, so it does not belong in this standalone plugin repository. The package must remain below the community limit of 200 files. Original GIF files, if present, belong in ignored `assets/source/`; PNG animation frames are runtime assets.

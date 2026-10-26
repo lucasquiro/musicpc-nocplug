@@ -5,9 +5,11 @@
 
 local mpc = require("../mpd/client.luau")
 local playerActions = require("../player/actions.luau")
+local editorController = require("../editor/controller.luau")
 local M = {}
 local playlistOps = nil
 local opened = false
+local editorActive = false
 local playlistName = ""
 local playlistTrack = nil
 local playlistPosition = nil
@@ -21,6 +23,7 @@ local libraryHasMorePages = false
 local libraryPages = {}
 local libraryLoading = false
 local libraryReloadPending = false
+local libraryRefreshPending = false
 local LIBRARY_LIMIT = 25
 local QUEUE_RENDER_LIMIT = 40
 local PLAYLIST_RENDER_LIMIT = 30
@@ -42,11 +45,12 @@ local closeRequestToken = tonumber(noctalia.state.get("musicpc.closeRequest")) o
 local coverTrack = ""
 local coverPath = nil
 local coverLoading = false
-local mascotAnimation = "sleep"
+local mascotAnimation = "sleep_back"
 local mascotTarget = nil
 local mascotFrame = 0
 local mascotAccumulator = 0
-local MASCOT_FRAME_COUNTS = { music = 51, sleep = 51, wake = 16, sleep_back = 16 }
+local mascotTransitioning = false
+local MASCOT_TRANSITION_FRAME_COUNT = 16
 local lastRendered = 0     -- último valor que dibujamos en el slider
 local lastFile = ""        -- para detectar cambio de canción
 local queueRefreshToken = tonumber(noctalia.state.get("player.queueRefresh")) or 0
@@ -89,6 +93,7 @@ local function onOpen()
   mascotTarget = nil
   mascotFrame = 0
   mascotAccumulator = 0
+  mascotTransitioning = false
   expanded = true
   listProgress = 1
   currentPlayer.queue = noctalia.state.get("player.queue") or {}
@@ -118,12 +123,11 @@ local function onFrameTick(deltaMs)
   if mascotAccumulator < 80 then return end
   mascotAccumulator %= 80
   local changed = false
-  if not closing and not coverPath and (mascotAnimation == "wake" or mascotAnimation == "sleep_back") then
+  if not closing and not coverPath and mascotTransitioning then
     mascotFrame += 1
-    local frameCount = MASCOT_FRAME_COUNTS[mascotAnimation] or 1
-    if mascotFrame >= frameCount then
-      mascotAnimation = mascotTarget or "sleep"
-      mascotFrame = 0
+    if mascotFrame >= MASCOT_TRANSITION_FRAME_COUNT - 1 then
+      mascotFrame = MASCOT_TRANSITION_FRAME_COUNT - 1
+      mascotTransitioning = false
     end
     changed = true
   end
@@ -204,7 +208,8 @@ end
 local function onLibraryContextAction(actionId, file)
   if actionId == "edit-tags" then
     noctalia.state.set("musicpc.editTrack", file)
-    noctalia.togglePanel("lucasquiro/musicpc-nocplug:editor")
+    editorActive = true
+    editorController.onOpen()
   elseif actionId == "trash-track" then
     mediaHelper("trash", { file }, function(result)
       if result.exitCode ~= 0 then
@@ -284,18 +289,25 @@ end
 
 --- EN: Loads one library page asynchronously and updates pagination metadata.
 --- ES: Carga una página de biblioteca de forma asíncrona y actualiza los datos de paginación.
-local function loadLibrary(page)
-  if libraryLoading then libraryReloadPending = true; return end
+local function loadLibrary(page, refreshIndex)
+  if libraryLoading then
+    libraryReloadPending = true
+    libraryRefreshPending = libraryRefreshPending or refreshIndex == true
+    return
+  end
   libraryPage = math.max(1, tonumber(page) or 1)
   libraryLoading = true
   library = nil
   --- EN: Updates the page model and rerenders after the helper completes.
   --- ES: Actualiza el modelo de página y redibuja al terminar el helper.
-  mediaHelper("library-page", { libraryPage, LIBRARY_LIMIT }, function(result)
+  local action = refreshIndex and "library-refresh" or "library-page"
+  mediaHelper(action, { libraryPage, LIBRARY_LIMIT }, function(result)
     libraryLoading = false
     if libraryReloadPending then
       libraryReloadPending = false
-      loadLibrary(libraryPage)
+      local refreshPending = libraryRefreshPending
+      libraryRefreshPending = false
+      loadLibrary(libraryPage, refreshPending)
       return
     end
     if result.exitCode == 0 then
@@ -459,7 +471,7 @@ end
 function reloadLibrary()
   library = nil
   listContentDirty = true
-  loadLibrary(libraryPage)
+  loadLibrary(libraryPage, true)
   render(currentPlayer)
 end
 
@@ -722,15 +734,12 @@ end
 --- EN: Chooses a mascot transition when playback switches between active and idle.
 --- ES: Elige una transición de la mascota cuando la reproducción pasa entre activa y detenida.
 local function selectMascot(player)
-  local target = player.state == "playing" and "music" or "sleep"
-  if mascotTarget == nil then
+  local target = player.state == "playing"
+  if mascotTarget == nil or target ~= mascotTarget then
     mascotTarget = target
-    mascotAnimation = target == "music" and "wake" or "sleep"
+    mascotAnimation = target and "wake" or "sleep_back"
     mascotFrame = 0
-  elseif target ~= mascotTarget then
-    mascotTarget = target
-    mascotAnimation = target == "music" and "wake" or "sleep_back"
-    mascotFrame = 0
+    mascotTransitioning = true
   end
 end
 
@@ -744,6 +753,10 @@ end
 --- ES: Dibuja el panel desde el estado actual y conserva listas entre ticks de progreso.
 render = function(player)
   if not opened then return end
+  if editorActive then
+    editorController.renderCurrent()
+    return
+  end
   player = player or currentPlayer or {}
   currentPlayer = player
   selectMascot(player)
@@ -835,9 +848,17 @@ render = function(player)
     }))
   end
   panel.render(ui.column({ gap = 10, padding = 14, fill = "surface", radius = 12, align = "stretch", opacity = playerOpacity }, children))
-  local animatingMascot = not coverPath and (mascotAnimation == "wake" or mascotAnimation == "sleep_back")
+  local animatingMascot = not coverPath and mascotTransitioning
   panel.setNeedsFrameTick(opened and (closing or animatingMascot))
 end
+
+--- EN: Restores the queue view when the embedded metadata editor finishes; returns nothing.
+--- ES: Restaura la vista de cola cuando termina el editor de metadatos integrado; no devuelve nada.
+editorController.setCloseHandler(function()
+  editorActive = false
+  closing = false
+  render(currentPlayer)
+end)
 
 --- EN: Rebuilds the panel model when the shared current-track snapshot changes.
 --- ES: Reconstruye el modelo del panel cuando cambia la instantánea compartida de la pista actual.
@@ -920,9 +941,28 @@ local callbacks = {
   onLibraryContextAction = onLibraryContextAction,
 }
 
+local editorCallbacks = {
+  requestClose = editorController.requestClose,
+  continueEditing = editorController.continueEditing,
+  discardChanges = editorController.discardChanges,
+  saveMetadata = editorController.saveMetadata,
+  cancelOverwrite = editorController.cancelOverwrite,
+  confirmOverwriteSave = editorController.confirmOverwriteSave,
+}
+
 --- EN: Dispatches a host callback by its documented global name; forwards all callback arguments.
 --- ES: Enruta un callback del host por su nombre global documentado y reenvía sus argumentos.
 function M.dispatch(name, ...)
+  if editorActive then
+    if name == "onClose" then
+      editorController.onClose()
+      editorActive = false
+    else
+      local editorCallback = editorCallbacks[name]
+      if editorCallback then editorCallback(...) end
+      return nil
+    end
+  end
   local callback = callbacks[name]
   if callback then callback(...) end
   return nil
