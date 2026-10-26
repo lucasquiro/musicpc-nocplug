@@ -1,0 +1,4 @@
+{
+    "luau-lsp.studioPlugin.enabled": true,
+    "luau-lsp.sourcemap.generatorCommand": ""
+}

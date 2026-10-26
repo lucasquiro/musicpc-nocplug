@@ -1,0 +1,32 @@
+id         = "lucasquiro/musicpc-nocplug"
+name       = "MusicPC"
+version    = "0.1.1"
+plugin_api = 34
+author     = "lucasquiro"
+dependencies = ["mpc", "python3", "ffmpeg", "gio"]
+icon       = "music"
+
+[[service]]
+id    = "mpd"
+entry = "service.luau"
+
+[[widget]]
+id    = "player"
+entry = "widget.luau"
+
+[[panel]]
+id        = "queue"
+entry     = "panel.luau"
+width     = 400
+height    = 480
+placement = "attached"
+open_near_click = true
+
+[[panel]]
+id        = "editor"
+entry     = "editor.luau"
+width     = 400
+height    = 480
+placement = "attached"
+open_near_click = true
+dismiss_on_outside_click = false
