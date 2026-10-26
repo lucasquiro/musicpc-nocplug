@@ -18,6 +18,7 @@ local libraryHasNext = false
 local libraryHasMorePages = false
 local libraryPages = {}
 local libraryLoading = false
+local libraryReloadPending = false
 local LIBRARY_LIMIT = 25
 local QUEUE_RENDER_LIMIT = 40
 local PLAYLIST_RENDER_LIMIT = 30
@@ -115,12 +116,17 @@ local mediaHelper
 
 -- Carga la lista de canciones de la biblioteca de MPD (solo al pedirla).
 local function loadLibrary(page)
-  if libraryLoading then return end
+  if libraryLoading then libraryReloadPending = true; return end
   libraryPage = math.max(1, tonumber(page) or 1)
   libraryLoading = true
   library = nil
   mediaHelper("library-page", { libraryPage, LIBRARY_LIMIT }, function(result)
     libraryLoading = false
+    if libraryReloadPending then
+      libraryReloadPending = false
+      loadLibrary(libraryPage)
+      return
+    end
     if result.exitCode == 0 then
       local ok, decoded = pcall(noctalia.json.decode, result.stdout or "")
       if ok and type(decoded) == "table" then
@@ -603,6 +609,14 @@ end)
 noctalia.state.watch("player.playlists", function(playlists)
   currentPlayer.playlists = playlists or {}
   listContentDirty = true
+  render(currentPlayer)
+end)
+
+noctalia.state.watch("musicpc.updatedTrack", function(track)
+  if type(track) ~= "table" or not track.old or not track.new or track.old == track.new then return end
+  library = nil
+  listContentDirty = true
+  if tab == "library" then loadLibrary(libraryPage) end
   render(currentPlayer)
 end)
 
