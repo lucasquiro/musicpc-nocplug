@@ -1,5 +1,6 @@
 --!strict
--- Type definitions for the Noctalia plugin API (plugin_api 39).
+--- EN: Type definitions for Noctalia plugin APIs through level 43; declarations marked API 35+ are unavailable at plugin_api 34.
+--- ES: Definiciones de tipos de Noctalia hasta API 43; las declaraciones marcadas API 35+ no están disponibles con plugin_api 34.
 --
 -- luau-lsp *definition file*: it declares the host-injected globals (noctalia.*,
 -- barWidget.*, shortcut.*, launcher.*, desktopWidget.*, panel.*, layer.*, ui.*) so authors
@@ -164,6 +165,7 @@ export type NoctaliaSound = {
 -- Compositor idle notification. API 35. callback(true) after `seconds` without user
 -- input, callback(false) on the next input. Honors idle inhibitors unless
 -- ignoreInhibitors is set. At most 8 watches per entry; released on reload/stop.
+-- API 35. Not available when the manifest declares plugin_api = 34.
 export type NoctaliaIdle = {
   watch: (seconds: number, callback: (idle: boolean) -> (), options: { ignoreInhibitors: boolean? }?) -> number,
   unwatch: (id: number) -> boolean, -- false for an unknown id
@@ -187,6 +189,7 @@ export type LayerProps = {
 
 -- Drives this plugin's own [[layer]] entries by local id ("saver"). Idempotent and
 -- applied asynchronously; configure applies to live instances and future shows. API 36.
+-- API 36. Not available when the manifest declares plugin_api = 34.
 export type NoctaliaLayer = {
   show: (entryId: string) -> (),
   hide: (entryId: string) -> (),
@@ -195,6 +198,7 @@ export type NoctaliaLayer = {
 
 -- One concrete event instance from noctalia.calendarEvents(); recurring events arrive
 -- already expanded. API 37.
+-- API 37. Not available when the manifest declares plugin_api = 34.
 export type CalendarEvent = {
   id: string, -- iCal UID / provider id; a meeting on two calendars has two ids unless [calendar] dedupe_events
   title: string,
@@ -214,6 +218,7 @@ export type OsdOptions = {
 
 -- API 39. `icon` is a glyph name (same names ui.glyph accepts) and
 -- must not be empty; `value` is the text beside it, defaulting to "".
+-- API 39. Not available when the manifest declares plugin_api = 34.
 export type NoctaliaOsd = {
   show: (icon: string, value: string?, opts: OsdOptions?) -> (),
 }
@@ -334,9 +339,9 @@ export type Noctalia = {
 
   state: NoctaliaState,
   sound: NoctaliaSound,
-  idle: NoctaliaIdle,
-  layer: NoctaliaLayer,
-  osd: NoctaliaOsd,
+  idle: NoctaliaIdle, -- API 35
+  layer: NoctaliaLayer, -- API 36
+  osd: NoctaliaOsd, -- API 39
   json: NoctaliaJson,
   string: NoctaliaString,
 }
@@ -500,6 +505,7 @@ export type UiImageProps = {
 -- corner radius. value and callbacks are "#RRGGBB", or "#RRGGBBAA" with alpha = true. value
 -- is applied only when the prop changes between renders and never mid-drag; echoing
 -- onChange back is safe. The HEX/RGB/HSL format switch opens a dropdown only in panels.
+-- API 41. Not available when the manifest declares plugin_api = 34.
 export type UiColorPickerProps = {
   key: string?,
   width: number?, -- logical px; fills the container when unset; height follows
@@ -520,6 +526,7 @@ export type UiColorPickerProps = {
 -- "0.0000".."1.0000" over the displayed frame, 0,0 top-left. Moves are coalesced but never
 -- reordered across a press, release, click, or scroll. Text and key callbacks make the
 -- control focusable by clicking it.
+-- API 40. Not available when the manifest declares plugin_api = 34.
 export type UiPixelStreamProps = {
   key: string?,
   width: number?,
@@ -722,6 +729,7 @@ export type UiScrollProps = {
 }
 
 -- ui.dragSource (panels, API 5; bar widgets, API 38). Marks a subtree draggable: a grip
+-- Bar-widget use and its API 38-only props are unavailable when the manifest declares plugin_api = 34.
 -- glyph, or a whole row through previewAncestor. dragType and payload are required - a
 -- missing, mistyped, empty or over-limit value disables the control for that render.
 -- Limits: payload 16 KiB, dragType 256 bytes. In a bar widget the ghost stays inside the
@@ -761,6 +769,7 @@ export type UiDragSourceProps = {
 }
 
 -- ui.dropZone (panels, API 5; bar widgets, API 38). Flex container that accepts drops; accepts, value and
+-- Bar-widget use and API 38-only props are unavailable when the manifest declares plugin_api = 34.
 -- onDrop are required (`accepts = {}` accepts nothing). Nested zones resolve to the
 -- deepest accepting zone, hitSlop zones first, closest wins. The host moves nothing: the
 -- callback mutates the plugin's model and re-renders. Limits: value/onDrop/each accepts
@@ -808,8 +817,8 @@ declare ui: {
   markdown: (props: UiMarkdownProps?) -> UiNode,
   glyph: (props: UiGlyphProps?) -> UiNode,
   image: (props: UiImageProps?) -> UiNode,
-  pixelStream: (props: UiPixelStreamProps?) -> UiNode,
-  colorPicker: (props: UiColorPickerProps?) -> UiNode,
+  pixelStream: (props: UiPixelStreamProps?) -> UiNode, -- API 40
+  colorPicker: (props: UiColorPickerProps?) -> UiNode, -- API 41
   separator: (props: UiSeparatorProps?) -> UiNode,
   spacer: (props: UiSpacerProps?) -> UiNode,
   progress: (props: UiProgressProps?) -> UiNode,

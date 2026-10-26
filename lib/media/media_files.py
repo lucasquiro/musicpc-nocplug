@@ -1,3 +1,6 @@
+"""EN: Provides safe MPD-library file operations for the MusicPC Luau entries.
+ES: Proporciona operaciones seguras de archivos de la biblioteca MPD a las entradas Luau de MusicPC."""
+
 import hashlib
 import json
 import os
@@ -28,6 +31,8 @@ TAG_NAMES = {
 }
 
 
+# --- EN: Resolves MPD's configured music directory from its server or common config files.
+# --- ES: Resuelve el directorio musical de MPD desde el servidor o archivos de configuración habituales.
 def mpd_config():
     host_setting = os.environ.get("MPD_HOST", "localhost")
     password = None
@@ -104,6 +109,8 @@ def mpd_config():
     raise RuntimeError("No se pudo resolver music_directory de MPD; revisa MPD_HOST o mpd.conf")
 
 
+# --- EN: Confines a relative track URI to the resolved MPD library and returns its path and root.
+# --- ES: Restringe una URI relativa a la biblioteca MPD y devuelve su ruta y raíz.
 def resolve_track(uri):
     root = mpd_config()
     relative = Path(uri)
@@ -115,6 +122,8 @@ def resolve_track(uri):
     return path, root
 
 
+# --- EN: Reads supported audio tags with ffprobe and returns normalized string values.
+# --- ES: Lee etiquetas admitidas con ffprobe y devuelve valores de texto normalizados.
 def read_tags(uri):
     path, _root = resolve_track(uri)
     result = subprocess.run(
@@ -129,6 +138,8 @@ def read_tags(uri):
     return {key: normalized.get(name.casefold(), "") for key, name in TAG_NAMES.items()}
 
 
+# --- EN: Rewrites MP3 tags and optionally renames the file with validated atomic replacement.
+# --- ES: Reescribe etiquetas MP3 y opcionalmente renombra el archivo con reemplazo atómico validado.
 def save_tags(uri, values, overwrite=False):
     path, root = resolve_track(uri)
     if path.suffix.casefold() != ".mp3":
@@ -181,6 +192,8 @@ def save_tags(uri, values, overwrite=False):
     return updated_uri
 
 
+# --- EN: Fetches embedded artwork using mpc and stores it in a per-plugin cache.
+# --- ES: Obtiene carátula incrustada con mpc y la guarda en una caché del plugin.
 def fetch_cover(uri, cache_directory):
     cache = Path(cache_directory)
     cache.mkdir(parents=True, exist_ok=True)
@@ -205,12 +218,16 @@ def fetch_cover(uri, cache_directory):
     print(destination)
 
 
+# --- EN: Moves a validated library track to the desktop trash and requests an MPD update.
+# --- ES: Mueve una pista validada a la papelera del escritorio y solicita actualizar MPD.
 def trash_track(uri):
     path, _root = resolve_track(uri)
     subprocess.run(["gio", "trash", str(path)], check=True, capture_output=True, text=True)
     subprocess.run(["mpc", "update"], check=False, capture_output=True)
 
 
+# --- EN: Streams enough mpc listall output to build one page and nearby pagination metadata.
+# --- ES: Lee suficiente salida de mpc listall para construir una página y metadatos de paginación próximos.
 def list_library_page(page, page_size):
     page = max(1, int(page))
     page_size = min(100, max(1, int(page_size)))
@@ -258,6 +275,8 @@ def list_library_page(page, page_size):
     }
 
 
+# --- EN: Dispatches the requested helper operation using argv parameters; prints data or raises on failure.
+# --- ES: Ejecuta la operación solicitada con parámetros argv; imprime datos o lanza un error.
 def main():
     action = sys.argv[1]
     if action == "cover":

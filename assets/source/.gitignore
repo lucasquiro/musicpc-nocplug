@@ -1,0 +1,3 @@
+# EN: Keeps source GIFs local; runtime PNG frames remain publishable.
+# ES: Mantiene los GIF originales en local; los PNG de runtime sí se publican.
+*.gif

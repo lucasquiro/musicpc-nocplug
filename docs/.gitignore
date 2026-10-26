@@ -1,0 +1,4 @@
+# EN: Keeps local scratch files out of published documentation.
+# ES: Excluye archivos temporales locales de la documentación publicada.
+*.bak
+*.tmp

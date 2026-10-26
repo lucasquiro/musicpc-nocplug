@@ -1,8 +1,13 @@
+## EN: Declares MusicPC catalog metadata, runtime dependencies, and Noctalia entry scripts.
+## ES: Declara los metadatos de catálogo, dependencias y scripts de entrada de Noctalia para MusicPC.
 id         = "lucasquiro/musicpc-nocplug"
 name       = "MusicPC"
-version    = "0.1.1"
+version    = "0.2.0"
 plugin_api = 34
 author     = "lucasquiro"
+license    = "MIT"
+description = "Control an MPD player from the bar with queue, playlists, library browsing, and MP3 metadata editing."
+tags       = ["music", "mpd", "player"]
 dependencies = ["mpc", "python3", "ffmpeg", "gio"]
 icon       = "music"
 
