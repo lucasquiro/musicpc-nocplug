@@ -2,7 +2,7 @@
 ## ES: Declara los metadatos de catálogo, dependencias y scripts de entrada de Noctalia para MusicPC.
 id         = "lucasquiro/musicpc-nocplug"
 name       = "MusicPC"
-version    = "0.2.0"
+version    = "0.2.1"
 plugin_api = 34
 author     = "lucasquiro"
 license    = "MIT"

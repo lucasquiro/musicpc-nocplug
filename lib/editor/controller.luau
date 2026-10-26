@@ -17,20 +17,20 @@ local metadataLoaded = false
 local tags = {}
 local original = {}
 local fields = {
-  { key = "title", label = "Título" },
-  { key = "artist", label = "Artista" },
-  { key = "album", label = "Álbum" },
-  { key = "album_artist", label = "Artista del álbum" },
-  { key = "date", label = "Año / fecha" },
-  { key = "genre", label = "Género" },
-  { key = "track", label = "Número de pista" },
-  { key = "disc", label = "Número de disco" },
-  { key = "composer", label = "Compositor" },
-  { key = "performer", label = "Intérprete" },
-  { key = "publisher", label = "Editorial" },
-  { key = "bpm", label = "BPM" },
-  { key = "comment", label = "Comentario" },
-  { key = "filename", label = "Nombre del archivo (.mp3)" },
+  { key = "title", label = "editor.field.title" },
+  { key = "artist", label = "editor.field.artist" },
+  { key = "album", label = "editor.field.album" },
+  { key = "album_artist", label = "editor.field.album_artist" },
+  { key = "date", label = "editor.field.date" },
+  { key = "genre", label = "editor.field.genre" },
+  { key = "track", label = "editor.field.track" },
+  { key = "disc", label = "editor.field.disc" },
+  { key = "composer", label = "editor.field.composer" },
+  { key = "performer", label = "editor.field.performer" },
+  { key = "publisher", label = "editor.field.publisher" },
+  { key = "bpm", label = "editor.field.bpm" },
+  { key = "comment", label = "editor.field.comment" },
+  { key = "filename", label = "editor.field.filename" },
 }
 
 --- EN: Detects unsaved tag or filename changes; returns true only when a field differs from its original value.
@@ -57,23 +57,23 @@ local function render()
   if not opened then return end
   if confirmDiscard then
     panel.render(ui.column({ padding = 18, gap = 12, fill = "surface", radius = 12, align = "stretch" }, {
-      ui.label({ text = "Hay cambios sin guardar", fontSize = 17, fontWeight = "bold" }),
-      ui.label({ text = "¿Quieres guardar los metadatos antes de salir?", color = "on_surface/0.75" }),
+      ui.label({ text = noctalia.tr("editor.unsaved_title"), fontSize = 17, fontWeight = "bold" }),
+      ui.label({ text = noctalia.tr("editor.unsaved_question"), color = "on_surface/0.75" }),
       ui.row({ gap = 8, justify = "end" }, {
-        ui.button({ text = "Seguir editando", variant = "ghost", onClick = "continueEditing" }),
-        ui.button({ text = "Descartar", variant = "secondary", onClick = "discardChanges" }),
-        ui.button({ text = "Guardar", variant = "primary", enabled = not busy, onClick = "saveMetadata" }),
+        ui.button({ text = noctalia.tr("editor.continue_editing"), variant = "ghost", onClick = "continueEditing" }),
+        ui.button({ text = noctalia.tr("editor.discard"), variant = "secondary", onClick = "discardChanges" }),
+        ui.button({ text = noctalia.tr("editor.save"), variant = "primary", enabled = not busy, onClick = "saveMetadata" }),
       }),
     }))
     return
   end
   if confirmOverwrite then
     panel.render(ui.column({ padding = 18, gap = 12, fill = "surface", radius = 12, align = "stretch" }, {
-      ui.label({ text = "El archivo ya existe", fontSize = 17, fontWeight = "bold" }),
-      ui.label({ text = "¿Quieres reemplazar " .. filename .. "?", color = "on_surface/0.75", maxLines = 2 }),
+      ui.label({ text = noctalia.tr("editor.exists_title"), fontSize = 17, fontWeight = "bold" }),
+      ui.label({ text = noctalia.tr("editor.overwrite_before") .. filename .. noctalia.tr("editor.overwrite_after"), color = "on_surface/0.75", maxLines = 2 }),
       ui.row({ gap = 8, justify = "end" }, {
-        ui.button({ text = "Cancelar", variant = "ghost", onClick = "cancelOverwrite" }),
-        ui.button({ text = "Reemplazar", variant = "destructive", enabled = not busy, onClick = "confirmOverwriteSave" }),
+        ui.button({ text = noctalia.tr("panel.cancel"), variant = "ghost", onClick = "cancelOverwrite" }),
+        ui.button({ text = noctalia.tr("editor.replace"), variant = "destructive", enabled = not busy, onClick = "confirmOverwriteSave" }),
       }),
     }))
     return
@@ -81,15 +81,15 @@ local function render()
 
   local rows = {}
   if busy then
-    table.insert(rows, ui.label({ text = "Procesando archivo…", color = "on_surface/0.7" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("editor.processing"), color = "on_surface/0.7" }))
   end
   for _, field in ipairs(fields) do
     table.insert(rows, ui.column({ key = "field-" .. field.key, gap = 3, align = "stretch" }, {
-      ui.label({ text = field.label, fontSize = 12, color = "on_surface/0.75" }),
+      ui.label({ text = noctalia.tr(field.label), fontSize = 12, color = "on_surface/0.75" }),
       ui.input({
         key = "input-" .. field.key .. "-" .. file .. "-" .. tostring(metadataLoaded),
         value = field.key == "filename" and filename or tags[field.key] or "",
-        placeholder = field.label,
+        placeholder = noctalia.tr(field.label),
         enabled = not busy,
         --- EN: Stores the edited value in the controller state; returns nothing.
         --- ES: Guarda el valor editado en el estado del controlador; no devuelve nada.
@@ -103,15 +103,15 @@ local function render()
   panel.render(ui.column({ height = 452, padding = 14, gap = 10, fill = "surface", radius = 12, align = "stretch" }, {
     ui.row({ gap = 8, align = "center" }, {
       ui.column({ flexGrow = 1, gap = 2 }, {
-        ui.label({ text = "Editar metadatos", fontSize = 16, fontWeight = "bold" }),
+        ui.label({ text = noctalia.tr("editor.title"), fontSize = 16, fontWeight = "bold" }),
         ui.label({ text = file:match("([^/]+)$") or file, fontSize = 12, color = "on_surface/0.7", maxLines = 1 }),
       }),
-      ui.button({ glyph = "close", variant = "ghost", tooltip = "Cerrar edición", onClick = "requestClose" }),
+      ui.button({ glyph = "close", variant = "ghost", tooltip = noctalia.tr("editor.close"), onClick = "requestClose" }),
     }),
     ui.scroll({ flexGrow = 1, gap = 8, padding = 2 }, rows),
     ui.row({ gap = 8, justify = "end" }, {
-      ui.button({ text = "Cancelar", variant = "ghost", enabled = not busy, onClick = "requestClose" }),
-      ui.button({ text = "Guardar cambios", glyph = "device-floppy", variant = "primary", enabled = not busy, onClick = "saveMetadata" }),
+      ui.button({ text = noctalia.tr("panel.cancel"), variant = "ghost", enabled = not busy, onClick = "requestClose" }),
+      ui.button({ text = noctalia.tr("editor.save_changes"), glyph = "device-floppy", variant = "primary", enabled = not busy, onClick = "saveMetadata" }),
     }),
   }))
 end
@@ -141,7 +141,7 @@ function M.onOpen()
   render()
   if file == "" then
     busy = false
-    noctalia.notifyError("Editor", "No se pudo abrir la canción seleccionada")
+    noctalia.notifyError(noctalia.tr("editor.error.generic"), noctalia.tr("editor.error.open"))
     render()
     return
   end
@@ -150,7 +150,7 @@ function M.onOpen()
   getMetadataOps().read(file, function(result)
     busy = false
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudieron leer los metadatos", result.stderr)
+      noctalia.notifyError(noctalia.tr("editor.error.read_title"), result.stderr)
     else
       local ok, decoded = pcall(noctalia.json.decode, result.stdout or "")
       if ok and type(decoded) == "table" then
@@ -158,7 +158,7 @@ function M.onOpen()
         original = table.clone(decoded)
         metadataLoaded = true
       else
-        noctalia.notifyError("Editor", "Respuesta de metadatos no válida")
+        noctalia.notifyError(noctalia.tr("editor.error.generic"), noctalia.tr("editor.error.invalid_response"))
       end
     end
     render()
@@ -227,13 +227,13 @@ function M.saveMetadata(overwrite)
         render()
         return
       end
-      noctalia.notifyError("No se pudieron guardar los metadatos", result.stderr)
+      noctalia.notifyError(noctalia.tr("editor.error.save_title"), result.stderr)
       render()
       return
     end
     local refreshToken = tonumber(noctalia.state.get("player.queueRefresh")) or 0
     noctalia.state.set("player.queueRefresh", refreshToken + 1)
-    noctalia.notify("Metadatos guardados", tags.title or file)
+    noctalia.notify(noctalia.tr("editor.notice.saved"), tags.title or file)
     noctalia.state.set("musicpc.updatedTrack", { old = file, new = noctalia.string.trim(result.stdout or "") })
     closeEditor()
   end)

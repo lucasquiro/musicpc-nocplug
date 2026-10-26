@@ -3,6 +3,10 @@
 EN: Version history for MusicPC; maintained alongside plugin.toml releases.
 ES: Historial de versiones de MusicPC; se mantiene junto con las versiones de plugin.toml.
 
+## 0.2.1 - 2026-10-26
+
+- Added English and Spanish translations for widget, panel, and metadata-editor controls, labels, menus, statuses, and notifications.
+
 ## 0.2.0 - 2026-10-26
 
 - Reorganized MPD, playlist, player-action, metadata, editor, panel-controller, and media-helper code into purpose-specific modules.

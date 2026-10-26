@@ -187,7 +187,7 @@ local function onQueueContextAction(actionId, context)
   elseif actionId == "remove-track" then
     mpc.delete(position, function(result)
       if result.exitCode ~= 0 then
-        noctalia.notifyError("No se pudo quitar de la cola", result.stderr)
+        noctalia.notifyError(noctalia.tr("panel.error.remove_queue"), result.stderr)
       else
         requestQueueRefresh()
       end
@@ -208,9 +208,9 @@ local function onLibraryContextAction(actionId, file)
   elseif actionId == "trash-track" then
     mediaHelper("trash", { file }, function(result)
       if result.exitCode ~= 0 then
-        noctalia.notifyError("No se pudo mover a la papelera", result.stderr)
+        noctalia.notifyError(noctalia.tr("panel.error.trash"), result.stderr)
       else
-        noctalia.notify("Canción movida a la papelera", file)
+        noctalia.notify(noctalia.tr("panel.notice.trashed"), file)
         if library then
           for index, libraryFile in ipairs(library) do
             if libraryFile == file then table.remove(library, index); break end
@@ -237,7 +237,7 @@ local function moveTrack(fromPosition, toPosition)
   --- ES: Actualiza la cola después del reordenamiento e informa errores.
   mpc.move(fromPosition, toPosition, function(result)
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudo cambiar el orden", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.reorder"), result.stderr)
     else
       requestQueueRefresh()
     end
@@ -251,9 +251,9 @@ addTrackToPlaylist = function(name, track)
   --- ES: Informa si MPD aceptó añadir la pista a la playlist.
   getPlaylistOps().addTrack(name, track.file, function(result)
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudo añadir a la playlist", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.add_playlist"), result.stderr)
     else
-      noctalia.notify("Canción añadida a la playlist", name)
+      noctalia.notify(noctalia.tr("panel.notice.added_playlist"), name)
       requestQueueRefresh()
     end
   end)
@@ -269,9 +269,9 @@ local function saveTrackToNewPlaylist()
   --- ES: Limpia el formulario y actualiza las vistas tras añadir la pista correctamente.
   getPlaylistOps().addTrack(name, track.file, function(result)
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudo crear la playlist", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.create_playlist"), result.stderr)
     else
-      noctalia.notify("Playlist creada", name)
+      noctalia.notify(noctalia.tr("panel.notice.created_playlist"), name)
       playlistName = ""
       playlistTrack = nil
       playlistPosition = nil
@@ -309,11 +309,11 @@ local function loadLibrary(page)
         libraryPages = decoded.pages or {}
       else
         library = {}
-        noctalia.notifyError("No se pudo leer la biblioteca", "Respuesta de páginas no válida")
+        noctalia.notifyError(noctalia.tr("panel.error.library"), noctalia.tr("panel.error.invalid_pages"))
       end
     else
       library = {}
-      noctalia.notifyError("No se pudo leer la biblioteca", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.library"), result.stderr)
     end
     listContentDirty = true
     render(currentPlayer)
@@ -329,13 +329,13 @@ local function addSong(file)
   --- ES: Inicia la reproducción solo después de que MPD añada correctamente el archivo.
   mpc.add(file, function(result)
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudo añadir", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.add"), result.stderr)
     else
       --- EN: Reports a playback failure after the queue addition succeeded.
       --- ES: Informa un error de reproducción después de añadir correctamente a la cola.
       mpc.play(position, function(playResult)
         if playResult.exitCode ~= 0 then
-          noctalia.notifyError("No se pudo reproducir la canción", playResult.stderr)
+          noctalia.notifyError(noctalia.tr("panel.error.play"), playResult.stderr)
         end
       end)
     end
@@ -353,7 +353,7 @@ mediaHelper = function(action, args, callback)
   end
   local pluginDir = noctalia.pluginDir()
   if not pluginDir then
-    deliver({ exitCode = 1, stdout = "", stderr = "No se pudo localizar el plugin" })
+    deliver({ exitCode = 1, stdout = "", stderr = noctalia.tr("panel.error.plugin_path") })
     return
   end
   local command = { "python3", pluginDir .. "/lib/media/media_files.py", action }
@@ -362,7 +362,7 @@ mediaHelper = function(action, args, callback)
   end
   local ok, accepted = pcall(noctalia.runAsync, command, deliver)
   if not ok or accepted == false then
-    deliver({ exitCode = 1, stdout = "", stderr = "No se pudo iniciar la operación de archivo" })
+    deliver({ exitCode = 1, stdout = "", stderr = noctalia.tr("panel.error.file_operation") })
   end
 end
 
@@ -399,7 +399,7 @@ function addAllLibrary()
     if result.exitCode == 0 then
       mpc.play()
     else
-      noctalia.notifyError("No se pudo añadir la biblioteca", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.add_library"), result.stderr)
     end
   end)
 end
@@ -413,13 +413,13 @@ function savePlaylist()
   --- ES: Limpia el nombre y actualiza el estado compartido tras guardar correctamente.
   getPlaylistOps().save(name, function(result)
     if result.exitCode == 0 then
-      noctalia.notify("Playlist guardada", name)
+      noctalia.notify(noctalia.tr("panel.notice.saved_playlist"), name)
       playlistName = ""
       listContentDirty = true
       requestQueueRefresh()
       render(currentPlayer)
     else
-      noctalia.notifyError("No se pudo guardar la playlist", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.save_playlist"), result.stderr)
     end
   end)
 end
@@ -431,7 +431,7 @@ local function loadPlaylist(name)
   --- ES: Solicita actualizar la cola después de cargar la playlist guardada.
   getPlaylistOps().load(name, function(result)
     if result.exitCode ~= 0 then
-      noctalia.notifyError("No se pudo cargar la playlist", result.stderr)
+      noctalia.notifyError(noctalia.tr("panel.error.load_playlist"), result.stderr)
     else
       requestQueueRefresh()
     end
@@ -484,7 +484,7 @@ local function queueView(player)
       ui.input({
         key = "new-track-playlist-name-" .. tostring(position),
         flexGrow = 1,
-        placeholder = "Nombre de la nueva playlist",
+        placeholder = noctalia.tr("panel.playlist.new_name"),
         value = playlistName,
         focus = true,
         --- EN: Keeps the draft playlist name synchronized with the input.
@@ -497,7 +497,7 @@ local function queueView(player)
       ui.button({
         glyph = "device-floppy",
         variant = "secondary",
-        tooltip = "Crear playlist y añadir canción",
+        tooltip = noctalia.tr("panel.playlist.create_add"),
         --- EN: Saves the selected track into the newly named playlist.
         --- ES: Guarda la pista seleccionada en la playlist con el nombre indicado.
         onClick = function() saveTrackToNewPlaylist() end,
@@ -505,7 +505,7 @@ local function queueView(player)
       ui.button({
         glyph = "close",
         variant = "ghost",
-        tooltip = "Cancelar",
+        tooltip = noctalia.tr("panel.cancel"),
         --- EN: Resets the inline form and restores the queue row.
         --- ES: Reinicia el formulario en línea y restaura la fila de cola.
         onClick = function() playlistTrack = nil; playlistPosition = nil; playlistName = ""; listContentDirty = true; render(player) end,
@@ -519,7 +519,7 @@ local function queueView(player)
   local lastPosition = math.min(#queue, firstPosition + QUEUE_RENDER_LIMIT - 1)
   if #queue > QUEUE_RENDER_LIMIT then
     table.insert(rows, ui.label({
-      text = "Mostrando " .. tostring(firstPosition) .. "-" .. tostring(lastPosition) .. " de " .. tostring(#queue),
+      text = noctalia.tr("panel.queue.showing") .. tostring(firstPosition) .. noctalia.tr("panel.queue.range") .. tostring(lastPosition) .. noctalia.tr("panel.queue.of") .. tostring(#queue),
       color = "on_surface/0.7",
       fontSize = 12,
     }))
@@ -556,12 +556,12 @@ local function queueView(player)
           dragType = "musicpc-queue-track",
           payload = tostring(position),
           previewAncestor = 1,
-          tooltip = "Arrastrar para cambiar el orden",
+          tooltip = noctalia.tr("panel.drag_reorder"),
         }, {
           ui.button({
             glyph = "grip-horizontal",
             variant = "ghost",
-            tooltip = "Arrastrar para cambiar el orden",
+            tooltip = noctalia.tr("panel.drag_reorder"),
           }),
         }),
         ui.button({
@@ -579,14 +579,14 @@ local function queueView(player)
           onRightClick = function()
             local items = {
               { kind = "header", label = label },
-              { kind = "header", label = "Añadir a playlist" },
+              { kind = "header", label = noctalia.tr("panel.queue.add_to_playlist") },
             }
             for index, name in ipairs(player.playlists or {}) do
               table.insert(items, { id = "playlist-" .. tostring(index), label = name })
             end
-            table.insert(items, { id = "create-playlist", label = "Crear playlist nueva…" })
+            table.insert(items, { id = "create-playlist", label = noctalia.tr("panel.playlist.create_new") })
             table.insert(items, { kind = "separator" })
-            table.insert(items, { id = "remove-track", label = "Quitar de la cola" })
+            table.insert(items, { id = "remove-track", label = noctalia.tr("panel.queue.remove") })
             panel.openContextMenu({
               items = items,
               onActivate = "onQueueContextAction",
@@ -602,9 +602,9 @@ local function queueView(player)
     table.insert(rows, 1, newPlaylistRow(playlistPosition or 0))
   end
   if #rows == 0 then
-    table.insert(rows, ui.label({ text = "La cola está vacía.", color = "on_surface/0.7" }))
-    table.insert(rows, ui.button({ text = "Añadir toda la biblioteca y reproducir", glyph = "playlist-add", variant = "primary", onClick = "addAllLibrary" }))
-    table.insert(rows, ui.label({ text = "O elige canciones en la pestaña Biblioteca.", color = "on_surface/0.7", fontSize = 12 }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.queue.empty"), color = "on_surface/0.7" }))
+    table.insert(rows, ui.button({ text = noctalia.tr("panel.queue.add_library_play"), glyph = "playlist-add", variant = "primary", onClick = "addAllLibrary" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.queue.choose_library"), color = "on_surface/0.7", fontSize = 12 }))
   end
   return rows
 end
@@ -614,14 +614,14 @@ end
 local function playlistsView(player)
   local rows = {
     ui.row({ gap = 6, align = "center" }, {
-      ui.input({ key = "playlist-name", flexGrow = 1, placeholder = "Guardar cola como…", value = playlistName,
+      ui.input({ key = "playlist-name", flexGrow = 1, placeholder = noctalia.tr("panel.playlist.save_queue"), value = playlistName,
         --- EN: Retains the name being typed for the next render.
         --- ES: Conserva el nombre escrito para el siguiente dibujo.
         onChange = function(value) playlistName = value end,
         --- EN: Saves the queue under the submitted name.
         --- ES: Guarda la cola con el nombre enviado.
         onSubmit = function(value) playlistName = value; savePlaylist() end }),
-      ui.button({ glyph = "device-floppy", variant = "secondary", tooltip = "Guardar cola como playlist", onClick = "savePlaylist" }),
+      ui.button({ glyph = "device-floppy", variant = "secondary", tooltip = noctalia.tr("panel.playlist.save_tooltip"), onClick = "savePlaylist" }),
     }),
   }
   local playlists = player.playlists or {}
@@ -638,9 +638,9 @@ local function playlistsView(player)
     }))
   end
   if #playlists == 0 then
-    table.insert(rows, ui.label({ text = "No hay playlists guardadas", color = "on_surface/0.7" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.playlist.empty"), color = "on_surface/0.7" }))
   elseif #playlists > PLAYLIST_RENDER_LIMIT then
-    table.insert(rows, ui.label({ text = "Mostrando las primeras " .. tostring(PLAYLIST_RENDER_LIMIT) .. " de " .. tostring(#playlists), color = "on_surface/0.7", fontSize = 12 }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.playlist.showing_first") .. tostring(PLAYLIST_RENDER_LIMIT) .. noctalia.tr("panel.queue.of") .. tostring(#playlists), color = "on_surface/0.7", fontSize = 12 }))
   end
   return rows
 end
@@ -650,12 +650,12 @@ end
 local function libraryView()
   local rows = {}
   if libraryLoading or library == nil then
-    table.insert(rows, ui.label({ text = "Cargando biblioteca…", color = "on_surface/0.7" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.library.loading"), color = "on_surface/0.7" }))
     return rows
   end
   table.insert(rows, ui.row({ gap = 6, align = "center" }, {
-    ui.label({ text = "Página " .. tostring(libraryPage), color = "on_surface/0.7", flexGrow = 1 }),
-    ui.button({ glyph = "refresh", variant = "ghost", tooltip = "Recargar biblioteca", onClick = "reloadLibrary" }),
+    ui.label({ text = noctalia.tr("panel.library.page") .. tostring(libraryPage), color = "on_surface/0.7", flexGrow = 1 }),
+    ui.button({ glyph = "refresh", variant = "ghost", tooltip = noctalia.tr("panel.library.reload"), onClick = "reloadLibrary" }),
   }))
   for i, file in ipairs(library) do
     local filename = string.match(file, "([^/]+)$") or file
@@ -674,8 +674,8 @@ local function libraryView()
       onRightClick = function()
         panel.openContextMenu({
           items = {
-            { id = "trash-track", label = "Eliminar" },
-            { id = "edit-tags", label = "Editar metadatos" },
+            { id = "trash-track", label = noctalia.tr("panel.library.delete") },
+            { id = "edit-tags", label = noctalia.tr("panel.library.edit_metadata") },
           },
           onActivate = "onLibraryContextAction",
           context = file,
@@ -685,7 +685,7 @@ local function libraryView()
   end
   if #libraryPages > 1 or libraryHasPrevious or libraryHasNext then
     local controls = {}
-    table.insert(controls, ui.button({ glyph = "chevron-left", variant = "ghost", tooltip = "Página anterior", enabled = libraryHasPrevious,
+    table.insert(controls, ui.button({ glyph = "chevron-left", variant = "ghost", tooltip = noctalia.tr("panel.library.previous_page"), enabled = libraryHasPrevious,
       --- EN: Navigates to the preceding library page.
       --- ES: Navega a la página anterior de la biblioteca.
       onClick = function() showLibraryPage(libraryPage - 1) end }))
@@ -707,14 +707,14 @@ local function libraryView()
     if libraryHasMorePages then
       table.insert(controls, ui.label({ text = "…", color = "on_surface/0.7" }))
     end
-    table.insert(controls, ui.button({ glyph = "chevron-right", variant = "ghost", tooltip = "Página siguiente", enabled = libraryHasNext,
+    table.insert(controls, ui.button({ glyph = "chevron-right", variant = "ghost", tooltip = noctalia.tr("panel.library.next_page"), enabled = libraryHasNext,
       --- EN: Navigates to the following library page.
       --- ES: Navega a la página siguiente de la biblioteca.
       onClick = function() showLibraryPage(libraryPage + 1) end }))
     table.insert(rows, ui.row({ gap = 4, align = "center", justify = "center" }, controls))
   end
   if #library == 0 then
-    table.insert(rows, ui.label({ text = "MPD no tiene canciones. Revisa music_directory y ejecuta `mpc update`.", color = "on_surface/0.7" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.library.empty"), color = "on_surface/0.7" }))
   end
   return rows
 end
@@ -747,7 +747,7 @@ render = function(player)
   player = player or currentPlayer or {}
   currentPlayer = player
   selectMascot(player)
-  local currentTitle = (player.title or "") ~= "" and player.title or "Sin reproducir"
+  local currentTitle = (player.title or "") ~= "" and player.title or noctalia.tr("panel.player.not_playing")
   requestCover(player.file or "")
     -- Si cambió la canción, se descarta cualquier valor arrastrado antes.
   if (player.file or "") ~= lastFile then
@@ -776,7 +776,7 @@ render = function(player)
         or ui.image({ key = "music-mascot", path = mascotPath(), width = 76, height = 76, fit = "contain" }),
       ui.column({ gap = 2, flexGrow = 1, align = "stretch" }, {
         ui.label({ text = currentTitle, fontSize = 16, fontWeight = "bold", maxLines = 1 }),
-        ui.label({ text = (player.artist or "") ~= "" and player.artist or (player.state == "offline" and "MPD apagado" or "Artista desconocido"), color = "on_surface/0.7", fontSize = 12, maxLines = 1 }),
+        ui.label({ text = (player.artist or "") ~= "" and player.artist or (player.state == "offline" and noctalia.tr("panel.player.offline") or noctalia.tr("panel.player.unknown_artist")), color = "on_surface/0.7", fontSize = 12, maxLines = 1 }),
       }),
     }),
     ui.row({ gap = 6, align = "center" }, {
@@ -804,15 +804,15 @@ render = function(player)
       ui.label({ text = player.total or "0:00", width = 42, fontSize = 12, textAlign = "end" }),
     }),
     ui.row({ gap = 8, align = "center", justify = "center" }, {
-      ui.button({ glyph = "arrows-shuffle", variant = "ghost", selected = player.random == true, tooltip = "Aleatorio", onClick = "toggleRandom" }),
-      ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = "Anterior", onClick = "previousTrack" }),
-      ui.button({ glyph = player.state == "playing" and "player-pause" or "player-play", variant = "primary", controlSize = "lg", tooltip = "Reproducir o pausar", onClick = "togglePlayback" }),
-      ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = "Siguiente", onClick = "nextTrack" }),
+      ui.button({ glyph = "arrows-shuffle", variant = "ghost", selected = player.random == true, tooltip = noctalia.tr("panel.control.random"), onClick = "toggleRandom" }),
+      ui.button({ glyph = "player-skip-back", variant = "ghost", tooltip = noctalia.tr("panel.control.previous"), onClick = "previousTrack" }),
+      ui.button({ glyph = player.state == "playing" and "player-pause" or "player-play", variant = "primary", controlSize = "lg", tooltip = noctalia.tr("panel.control.play_pause"), onClick = "togglePlayback" }),
+      ui.button({ glyph = "player-skip-forward", variant = "ghost", tooltip = noctalia.tr("panel.control.next"), onClick = "nextTrack" }),
       ui.button({
         glyph = player.repeatMode == "one" and "repeat-1" or "repeat",
         variant = "ghost",
         selected = player.repeatMode == "all" or player.repeatMode == "one" or player.repeatMode == true,
-        tooltip = player.repeatMode == "one" and "Repetir canción" or player.repeatMode == "all" and "Repetir cola" or "Repetición desactivada",
+        tooltip = player.repeatMode == "one" and noctalia.tr("panel.control.repeat_track") or player.repeatMode == "all" and noctalia.tr("panel.control.repeat_queue") or noctalia.tr("panel.control.repeat_off"),
         onClick = "toggleRepeat",
       }),
     }),
@@ -826,9 +826,9 @@ render = function(player)
       align = "stretch",
     }, {
       ui.row({ gap = 6 }, {
-        tabButton("queue", "Cola", "showQueue"),
-        tabButton("playlists", "Playlists", "showPlaylists"),
-        tabButton("library", "Biblioteca", "showLibrary"),
+        tabButton("queue", noctalia.tr("panel.tab.queue"), "showQueue"),
+        tabButton("playlists", noctalia.tr("panel.tab.playlists"), "showPlaylists"),
+        tabButton("library", noctalia.tr("panel.tab.library"), "showLibrary"),
       }),
       ui.scroll({ flexGrow = 1, gap = 3, padding = 6, fill = "surface/0.35", radius = 8,
         revealKey = playlistTrack and "new-track-playlist-" .. tostring(playlistPosition or 0) or nil }, cachedListContent),

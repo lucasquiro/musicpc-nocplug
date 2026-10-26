@@ -63,7 +63,7 @@ musicpc-nocplug/
 ├── panel.luau                  # Thin panel entry exposing host callback names.
 ├── editor.luau                 # Thin metadata-editor entry exposing Noctalia callbacks.
 ├── noctalia.d.luau             # Luau language-server definitions; includes marked APIs newer than 34.
-├── translations/               # Plugin translation bundles (currently empty JSON objects).
+├── translations/               # English and Spanish strings for plugin controls and UI messages.
 │   ├── en.json                 # English translation bundle.
 │   └── es.json                 # Spanish translation bundle.
 ├── assets/                     # Runtime image resources.

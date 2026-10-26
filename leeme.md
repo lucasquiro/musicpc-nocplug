@@ -63,7 +63,7 @@ musicpc-nocplug/
 ├── panel.luau                  # Entrada del panel con callbacks globales del host.
 ├── editor.luau                 # Entrada del editor que expone callbacks de Noctalia.
 ├── noctalia.d.luau             # Definiciones para Luau LSP; marca APIs posteriores al nivel 34.
-├── translations/               # Archivos de traducción (actualmente objetos JSON vacíos).
+├── translations/               # Textos en inglés y español para controles y mensajes del plugin.
 │   ├── en.json                 # Traducciones en inglés.
 │   └── es.json                 # Traducciones en español.
 ├── assets/                     # Recursos de imagen usados durante la ejecución.

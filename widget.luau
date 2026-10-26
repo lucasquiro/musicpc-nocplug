@@ -45,8 +45,8 @@ end
 local function render(p)
   -- Dibuja el título y los controles usando el último estado publicado.
   p = p or { state = "offline", title = "", artist = "", elapsed = "0:00", total = "0:00" }
-  local title = p.state == "offline" and "MPD apagado" or p.title
-  if p.state == "stopped" or title == "" then title = "Sin reproducir" end
+  local title = p.state == "offline" and noctalia.tr("widget.player.offline") or p.title
+  if p.state == "stopped" or title == "" then title = noctalia.tr("widget.player.not_playing") end
   barWidget.render(ui.row({ gap = 6, align = "center" }, {
     -- tamanio de todo el reprodutor en la barra
     ui.row({
@@ -64,7 +64,7 @@ local function render(p)
       glyph = p.state == "playing" and "player-pause" or "player-play",
       glyphSize = 14,
       variant = "ghost",
-      tooltip = p.state == "playing" and "Pausar" or "Reproducir",
+      tooltip = p.state == "playing" and noctalia.tr("widget.control.pause") or noctalia.tr("widget.control.play"),
       onClick = "togglePlayback",
     }),
     -- boton de retroceder en la barra
@@ -72,22 +72,22 @@ local function render(p)
       glyph = "player-skip-back",
       glyphSize = 14,
       variant = "ghost",
-      tooltip = "Volver atrás",
+      tooltip = noctalia.tr("widget.control.previous"),
       onClick = "previousTrack",
     }),
     ui.button({
       glyph = "player-skip-forward",
       glyphSize = 14,
       variant = "ghost",
-      tooltip = "Siguiente",
+      tooltip = noctalia.tr("widget.control.next"),
       onClick = "nextTrack",
     }),
   }))
   if p.state ~= "offline" and p.title ~= "" then
     barWidget.setTooltip({
-      { "Título", p.title },
-      { "Artista", p.artist ~= "" and p.artist or "-" },
-      { "Tiempo", p.elapsed .. " / " .. p.total },
+      { noctalia.tr("widget.tooltip.title"), p.title },
+      { noctalia.tr("widget.tooltip.artist"), p.artist ~= "" and p.artist or "-" },
+      { noctalia.tr("widget.tooltip.time"), p.elapsed .. " / " .. p.total },
     })
   else
     barWidget.clearTooltip()
@@ -118,8 +118,8 @@ noctalia.setUpdateInterval(250)
 --- EN: Advances the marquee for long titles on the widget's configured timer; returns nothing.
 --- ES: Avanza el desplazamiento de títulos largos en el intervalo del widget; no devuelve nada.
 function update()
-  local title = currentPlayer.state == "offline" and "MPD apagado" or currentPlayer.title or ""
-  if currentPlayer.state == "stopped" or title == "" then title = "Sin reproducir" end
+  local title = currentPlayer.state == "offline" and noctalia.tr("widget.player.offline") or currentPlayer.title or ""
+  if currentPlayer.state == "stopped" or title == "" then title = noctalia.tr("widget.player.not_playing") end
   if (utf8.len(title) or #title) <= TITLE_VISIBLE_CHARACTERS then return end
   marqueeOffset += 1
   render(currentPlayer)
